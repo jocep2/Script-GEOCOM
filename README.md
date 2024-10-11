@@ -1,0 +1,2 @@
+# Script-GEOCOM
+automatizaciones corporativas.
