@@ -607,7 +607,7 @@ KEY="/root/.ssh/id_dsa.pub"
 
 if [ $OP -eq 6 ]; then
     echo "Escoga Local a Trabajar"
-    read -p 'Ingrese IP del Local: ' ip_local 
+    read -p 'Ingrese ID del Local: ' localid 
 
     KEY="/root/.ssh/id_dsa.pub"
     if [ ! -f "$KEY" ]; then
@@ -619,19 +619,19 @@ if [ $OP -eq 6 ]; then
 
     # Ejecuto consulta a central
     echo "Consultando información del local en la base de datos central..."
-    run_query_geopos_central "SELECT LOCALID || ',' || NODE || ',' || IPADDRESS FROM nodes WHERE NODE = 99 AND ACTIVE = 1 AND IPADDRESS = '$ip_local';"
+    run_query_geopos_central "SELECT LOCALID || ',' || NODE || ',' || IPADDRESS FROM nodes WHERE NODE = 99 AND ACTIVE = 1 AND LOCALID = '$localid';"
     
-    if [ -z "$localid" ]; then
-        echo "No se encontró información para la IP $ip_local en la base de datos central."
+    if [ -z "$ipLocal" ]; then
+        echo "No se encontró información para el local con ID $localid en la base de datos central."
         exit 1
     fi
 
     # Ejecuto proceso en el local
     echo "Verificando conexión con el local..."
-    if ping -q -c1 "$ip_local" > /dev/null; then
-        echo "Obteniendo últimas 5 líneas de ControlImage.txt del local con IP $ip_local"
-        if setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@"$ip_local" "tail -n 5 /home/geocom/ControlImage.txt" > "ControlImage_$localid.txt"; then
-            echo "Últimas 5 líneas de ControlImage.txt del local con IP $ip_local:"
+    if ping -q -c1 "$ipLocal" > /dev/null; then
+        echo "Obteniendo últimas 5 líneas de ControlImage.txt del local con ID $localid"
+        if setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@"$ipLocal" "tail -n 5 /home/geocom/ControlImage.txt" > "ControlImage_$localid.txt"; then
+            echo "Últimas 5 líneas de ControlImage.txt del local con ID $localid:"
             cat "ControlImage_$localid.txt"
 
             echo "Comparando con ControlImage.txt local:"
@@ -646,6 +646,4 @@ if [ $OP -eq 6 ]; then
     else
         echo "Local Fuera de Línea"
     fi
-fi
-#Aquí termina el script principal
-fi
+fi #Aquí termina el script principal
