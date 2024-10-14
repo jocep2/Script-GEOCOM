@@ -606,6 +606,7 @@ KEY="/root/.ssh/id_dsa.pub"
  fi
 
 if [ $OP -eq 6 ]; then
+#cambio de raiz
     echo "Escoga Local a Trabajar"
     read -p 'Ingrese ID del Local: ' localid 
 
