@@ -14,7 +14,7 @@ rm -rf Manifiesto_antes.txt Manifiesto_despues.txt
  echo "3 .- Realizar Full - Locales OL."
  echo "4 .- Bajar video."
  echo "5 .- Desbloquear Usuario"
- echo "6 .- Comparar ControlImage.txt"
+ 
 
   read -p 'Escoga Opcion: ' OP
   
@@ -290,7 +290,7 @@ if [ $? -eq 0 ]; then
 
 echo "Sacamos Dump del local $localid - $ipLocal" 
 
- setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ipLocal "cd /home/geocom/UPDATEFILES && mysqldump -h$ipLocal --opt -pgeocom -ER geopos2cruzverde articles barcodes backoffice_schema_version acv acv_products acv_laboratories  acv_bioequivalence  ag_agreements  ag_apls  ag_beneficiaries ag_companies ag_cpls ag_credentials ag_doctors ag_factors ag_institution ag_pers_cond ag_plan_cond ag_plan_msg ag_planbiometryconfig ag_planbeneficiaries ag_planquote ag_planquoteinfo ag_planquoteinfo_planquote ag_plans ag_plans_response_code ag_popups ag_pricelist agreements articleselected paymentgroupfiltersdata groupfilters measureconversions measures negative parameter paymentmodes paymentmodesconfiguration paymentmodetypes permissions pharmaceuticalform plans posdocuments postypes prefixes products reasons relateditems relatedarticles rolepermissions roles rounders template_documents unimarctaxes zones cities communes advices adviceproducts active_ingredient compounding_type compounding_type_measure inputmanagers im_response_code genericactiveingredient genericactiveingredientarticle itemcategories categories warningproducts warningquestions warnings > fullNew.sql "
+ setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ipLocal "cd /home/geocom/UPDATEFILES && mysqldump -h$ipLocal --opt -pgeocom -ER geopos2cruzverde articles barcodes backoffice_schema_version acv acv_products acv_laboratories  acv_bioequivalence  ag_agreements  ag_apls  ag_beneficiaries ag_cards ag_companies ag_cpls ag_credentials ag_doctors ag_factors ag_institution ag_pers_cond ag_plan_cond ag_plan_msg ag_planbiometryconfig ag_planbeneficiaries ag_planquote ag_planquoteinfo ag_planquoteinfo_planquote ag_plans ag_plans_response_code ag_popups ag_pricelist agreements articleselected paymentgroupfiltersdata groupfilters measureconversions measures negative parameter paymentmodes paymentmodesconfiguration paymentmodetypes permissions pharmaceuticalform plans posdocuments postypes prefixes products reasons relateditems relatedarticles rolepermissions roles rounders template_documents unimarctaxes zones cities communes advices adviceproducts active_ingredient compounding_type compounding_type_measure inputmanagers im_response_code genericactiveingredient genericactiveingredientarticle itemcategories categories warningproducts warningquestions warnings > fullNew.sql "
 
 setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ipLocal "cd /home/geocom/UPDATEFILES && zip fullNew.sql.zip fullNew.sql"
 setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ipLocal "cd /home/geocom/UPDATEFILES && rm -rf fullNew.sql" 
@@ -594,8 +594,8 @@ KEY="/root/.ssh/id_dsa.pub"
 
                 echo "Finalizado con Exito, Recuerde subir evidencia a Jira...."
 
-                mv Usuario_despues.txt Usuario_despues_FCV_$fcv_userIdd_$fecha.txt
-                mv Usuario_antes.txt Usuario_antes_FCV_$fcv_userIdd_$fecha.txt
+                mv Usuario_despues.txt Usuario_despues_FCV-$fcv_$fecha.txt
+                mv Usuario_antes.txt Usuario_antes_FCV-$fcv_$fecha.txt
 
 
                         else
@@ -605,51 +605,4 @@ KEY="/root/.ssh/id_dsa.pub"
  
  fi
 
-if [ $OP -eq 6 ]; then
-    echo "Escoga Local a Trabajar"
-    read -p 'Ingrese IP del Local:' ip_local 
-
-    ## -------EJECUTO consulta a central --------------------
-
-    # log de consulta a  central"
-    run_query_geopos_central "select  LOCALID ||','|| NODE || ',' || IPADDRESS from nodes where NODE = 99 and ACTIVE = 1 and IPADDRESS='$ip_local';"
-    sleep 2
-
-    ## -------EJECUTO PROCESO EN EL LOCAL --------------------
-
-    USER="root"
-    PASSWD="difarma2020"
-    SSH_ASKPASS_SCRIPT=./ssh-askpass-script
-
-    cat > ${SSH_ASKPASS_SCRIPT} <<EOF
-#!/bin/bash
-echo "${PASSWD}"
-EOF
-
-    chmod 755 ${SSH_ASKPASS_SCRIPT}
-    export DISPLAY=:0
-    export SSH_ASKPASS=${SSH_ASKPASS_SCRIPT}
-
-    ping -q -c1 $ip_local > /dev/null
-    if [ $? -eq 0 ]; then
-        echo "Obteniendo últimas 5 líneas de ControlImage.txt del local con IP $ip_local"
-        setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ip_local "tail -n 5 /home/geocom/ControlImage.txt" > ControlImage_$ip_local.txt
-        
-        echo "Últimas 5 líneas de ControlImage.txt del local con IP $ip_local:"
-        cat "ControlImage_$ip_local.txt"
-
-        echo "Comparando con ControlImage.txt local:"
-        if [ -f "ControlImage.txt" ]; then
-            diff -u "ControlImage.txt" "ControlImage_$ip_local.txt"
-        else
-            echo "El archivo ControlImage.txt no existe en el directorio local."
-        fi
-    else
-        echo "Local Fuera de Linea"
-    fi
-fi
-
-# Aquí termina el script principal
-
-#
-fi
+#done
