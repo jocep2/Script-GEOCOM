@@ -607,49 +607,45 @@ KEY="/root/.ssh/id_dsa.pub"
 
 if [ $OP -eq 6 ]; then
     echo "Escoga Local a Trabajar"
-    read -p 'Ingrese IP del Local:' ip_local 
+    read -p 'Ingrese IP del Local: ' ip_local 
 
-    ## -------EJECUTO consulta a central --------------------
+    KEY="/root/.ssh/id_dsa.pub"
+    if [ ! -f "$KEY" ]; then
+        echo "Clave privada no encontrada en $KEY"
+        echo "* Por favor, créela con 'ssh-keygen -t dsa' *"
+        echo "* Para iniciar sesión en el host remoto sin contraseña, no asigne una contraseña a la clave que cree con ssh-keygen *"
+        exit 1
+    fi
 
-    # log de consulta a  central"
-    run_query_geopos_central "select  LOCALID ||','|| NODE || ',' || IPADDRESS from nodes where NODE = 99 and ACTIVE = 1 and IPADDRESS='$ip_local';"
-    sleep 2
+    # Ejecuto consulta a central
+    echo "Consultando información del local en la base de datos central..."
+    run_query_geopos_central "SELECT LOCALID || ',' || NODE || ',' || IPADDRESS FROM nodes WHERE NODE = 99 AND ACTIVE = 1 AND IPADDRESS = '$ip_local';"
+    
+    if [ -z "$localid" ]; then
+        echo "No se encontró información para la IP $ip_local en la base de datos central."
+        exit 1
+    fi
 
-    ## -------EJECUTO PROCESO EN EL LOCAL --------------------
-
-    USER="root"
-    PASSWD="difarma2020"
-    SSH_ASKPASS_SCRIPT=./ssh-askpass-script
-
-    cat > ${SSH_ASKPASS_SCRIPT} <<EOF
-#!/bin/bash
-echo "${PASSWD}"
-EOF
-
-    chmod 755 ${SSH_ASKPASS_SCRIPT}
-    export DISPLAY=:0
-    export SSH_ASKPASS=${SSH_ASKPASS_SCRIPT}
-
-    ping -q -c1 $ip_local > /dev/null
-    if [ $? -eq 0 ]; then
+    # Ejecuto proceso en el local
+    echo "Verificando conexión con el local..."
+    if ping -q -c1 "$ip_local" > /dev/null; then
         echo "Obteniendo últimas 5 líneas de ControlImage.txt del local con IP $ip_local"
-        setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ip_local "tail -n 5 /home/geocom/ControlImage.txt" > ControlImage_$ip_local.txt
-        
-        echo "Últimas 5 líneas de ControlImage.txt del local con IP $ip_local:"
-        cat "ControlImage_$ip_local.txt"
+        if setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@"$ip_local" "tail -n 5 /home/geocom/ControlImage.txt" > "ControlImage_$localid.txt"; then
+            echo "Últimas 5 líneas de ControlImage.txt del local con IP $ip_local:"
+            cat "ControlImage_$localid.txt"
 
-        echo "Comparando con ControlImage.txt local:"
-        if [ -f "ControlImage.txt" ]; then
-            diff -u "ControlImage.txt" "ControlImage_$ip_local.txt"
+            echo "Comparando con ControlImage.txt local:"
+            if [ -f "ControlImage.txt" ]; then
+                diff -u "ControlImage.txt" "ControlImage_$localid.txt"
+            else
+                echo "El archivo ControlImage.txt no existe en el directorio local."
+            fi
         else
-            echo "El archivo ControlImage.txt no existe en el directorio local."
+            echo "Error al obtener ControlImage.txt del local remoto."
         fi
     else
-        echo "Local Fuera de Linea"
+        echo "Local Fuera de Línea"
     fi
 fi
-
-# Aquí termina el script principal
-
-#
+#Aquí termina el script principal
 fi
