@@ -607,12 +607,12 @@ KEY="/root/.ssh/id_dsa.pub"
 
 if [ $OP -eq 6 ]; then
     echo "Escoga Local a Trabajar"
-    read -p 'Ingrese Nº de Local:' fcv 
+    read -p 'Ingrese IP del Local:' ip_local 
 
     ## -------EJECUTO consulta a central --------------------
 
     # log de consulta a  central"
-    run_query_geopos_central "select  LOCALID ||','|| NODE || ',' || IPADDRESS from nodes where NODE = 99 and ACTIVE = 1 and LOCALID=$fcv;"
+    run_query_geopos_central "select  LOCALID ||','|| NODE || ',' || IPADDRESS from nodes where NODE = 99 and ACTIVE = 1 and IPADDRESS='$ip_local';"
     sleep 2
 
     ## -------EJECUTO PROCESO EN EL LOCAL --------------------
@@ -630,17 +630,17 @@ EOF
     export DISPLAY=:0
     export SSH_ASKPASS=${SSH_ASKPASS_SCRIPT}
 
-    ping -q -c1 $ipLocal > /dev/null
+    ping -q -c1 $ip_local > /dev/null
     if [ $? -eq 0 ]; then
-        echo "Obteniendo últimas 5 líneas de ControlImage.txt del local $fcv"
-        setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ipLocal "tail -n 5 /home/geocom/ControlImage.txt" > ControlImage_$fcv.txt
+        echo "Obteniendo últimas 5 líneas de ControlImage.txt del local con IP $ip_local"
+        setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@$ip_local "tail -n 5 /home/geocom/ControlImage.txt" > ControlImage_$ip_local.txt
         
-        echo "Últimas 5 líneas de ControlImage.txt del FCV$fcv:"
-        cat "ControlImage_$fcv.txt"
+        echo "Últimas 5 líneas de ControlImage.txt del local con IP $ip_local:"
+        cat "ControlImage_$ip_local.txt"
 
         echo "Comparando con ControlImage.txt local:"
         if [ -f "ControlImage.txt" ]; then
-            diff -u "ControlImage.txt" "ControlImage_$fcv.txt"
+            diff -u "ControlImage.txt" "ControlImage_$ip_local.txt"
         else
             echo "El archivo ControlImage.txt no existe en el directorio local."
         fi
