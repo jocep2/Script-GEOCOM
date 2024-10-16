@@ -621,8 +621,8 @@ if [ $OP -eq 6 ]; then
 
     # Ejecuto consulta a central
     echo "Consultando información del local en la base de datos central..."
-    run_query_geopos_central "SELECT LOCALID || ',' || NODE || ',' || IPADDRESS FROM nodes WHERE NODE = 99 AND ACTIVE = 1 AND LOCALID = '$localid';"
-    
+    # Ejecutamos la consulta y guardamos el resultado en una variable
+
 
     USER="root"
     PASSWD="difarma2020"
@@ -636,24 +636,51 @@ EOF
     export DISPLAY=:0
     export SSH_ASKPASS=${SSH_ASKPASS_SCRIPT}
 
+    resultado=$(run_query_geopos_central "SELECT LOCALID || ',' || NODE || ',' || IPADDRESS FROM nodes WHERE NODE = 99 AND ACTIVE = 1 AND LOCALID = '$localid';")
+    
+    # Extraemos la dirección IP del resultado
+    ipLocal=$(echo $resultado | cut -d',' -f3)
+
     # Ejecuto proceso en el local
     echo "Verificando conexión con el local..."
     if ping -q -c1 "$ipLocal" > /dev/null; then
         echo "Obteniendo últimas 5 líneas de ControlImage.txt del local con ID $localid"
-        if setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@"$ipLocal" "tail -n 5 /home/geocom/ControlImage.txt" > "ControlImage_$localid.txt"; then
-            echo "Últimas 5 líneas de ControlImage.txt del local con ID $localid:"
-            cat "ControlImage_$localid.txt"
-
+        
+        # Definir rutas de archivos
+        local_control_image="/app/soporte/usuarios/jpgutierrez/A_2024/04/Version_2/ControlImage.txt"
+        remote_temp_file="ControlImage_temp_$localid.txt"
+        comparison_file="Comparacion_ControlImage_$localid.txt"
+        
+        # Obtener las últimas 5 líneas del archivo remoto
+        if setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@"$ipLocal" "tail -n 5 /home/geocom/ControlImage.txt" > "$remote_temp_file"; then
+            echo "Últimas 5 líneas de ControlImage.txt del local con ID $localid guardadas en $remote_temp_file"
+            
+            # Comparar con el archivo local
             echo "Comparando con ControlImage.txt local:"
-            if [ -f "ControlImage.txt" ]; then
-                diff -u "ControlImage.txt" "ControlImage_$localid.txt"
+            if [ -f "$local_control_image" ]; then
+                {
+                    echo "Contenido de $remote_temp_file:"
+                    cat "$remote_temp_file"
+                    echo -e "\n---\n"
+                    echo "Contenido de ControlImage.txt local:"
+                    cat "$local_control_image"
+                    echo -e "\n---\n"
+                    echo "Diferencias:"
+                    diff "$remote_temp_file" "$local_control_image" || true
+                } > "$comparison_file"
+                
+                echo "Comparación guardada en $comparison_file"
+                
+                # Mostrar un resumen de las diferencias
+                echo "Resumen de diferencias:"
+                diff --brief "$remote_temp_file" "$local_control_image" || true
             else
-                echo "El archivo ControlImage.txt no existe en el directorio local."
+                echo "Error: El archivo ControlImage.txt no existe en la ruta especificada: $local_control_image"
             fi
         else
-            echo "Error al obtener ControlImage.txt del local remoto."
+            echo "Error: No se pudo obtener las últimas 5 líneas de ControlImage.txt del local remoto."
         fi
     else
-        echo "Local Fuera de Línea"
+        echo "Error: Local Fuera de Línea. No se pudo establecer conexión con $ipLocal"
     fi
 fi #Aquí termina el script principal
