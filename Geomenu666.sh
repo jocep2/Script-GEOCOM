@@ -608,10 +608,10 @@ KEY="/root/.ssh/id_dsa.pub"
 if [ $OP -eq 6 ]; then
 #cambio de raiz
 #final
-echo "Escoga Local a Trabajar"
-read -p 'Ingrese ID del Local: ' localid 
+    echo "Escoga Local a Trabajar"
+    read -p 'Ingrese ID del Local: ' localid 
 
-KEY="/root/.ssh/id_dsa.pub"
+    KEY="/root/.ssh/id_dsa.pub"
     if [ ! -f "$KEY" ]; then
         echo "Clave privada no encontrada en $KEY"
         echo "* Por favor, créela con 'ssh-keygen -t dsa' *"
@@ -623,6 +623,18 @@ KEY="/root/.ssh/id_dsa.pub"
     echo "Consultando información del local en la base de datos central..."
     run_query_geopos_central "SELECT LOCALID || ',' || NODE || ',' || IPADDRESS FROM nodes WHERE NODE = 99 AND ACTIVE = 1 AND LOCALID = '$localid';"
     
+
+    USER="root"
+    PASSWD="difarma2020"
+    SSH_ASKPASS_SCRIPT=./ssh-askpass-script
+    cat > ${SSH_ASKPASS_SCRIPT} <<EOF
+#!/bin/bash
+echo "${PASSWD}"
+EOF
+
+    chmod 755 ${SSH_ASKPASS_SCRIPT}
+    export DISPLAY=:0
+    export SSH_ASKPASS=${SSH_ASKPASS_SCRIPT}
 
     # Ejecuto proceso en el local
     echo "Verificando conexión con el local..."
