@@ -608,10 +608,10 @@ KEY="/root/.ssh/id_dsa.pub"
 if [ $OP -eq 6 ]; then
 #cambio de raiz
 #final
-    echo "Escoga Local a Trabajar"
-    read -p 'Ingrese ID del Local: ' localid 
+echo "Escoga Local a Trabajar"
+read -p 'Ingrese ID del Local: ' localid 
 
-    KEY="/root/.ssh/id_dsa.pub"
+KEY="/root/.ssh/id_dsa.pub"
     if [ ! -f "$KEY" ]; then
         echo "Clave privada no encontrada en $KEY"
         echo "* Por favor, créela con 'ssh-keygen -t dsa' *"
@@ -623,10 +623,6 @@ if [ $OP -eq 6 ]; then
     echo "Consultando información del local en la base de datos central..."
     run_query_geopos_central "SELECT LOCALID || ',' || NODE || ',' || IPADDRESS FROM nodes WHERE NODE = 99 AND ACTIVE = 1 AND LOCALID = '$localid';"
     
-    if [ -z "$ipLocal" ]; then
-        echo "No se encontró información para el local con ID $localid en la base de datos central."
-        exit 1
-    fi
 
     # Ejecuto proceso en el local
     echo "Verificando conexión con el local..."
