@@ -645,42 +645,27 @@ EOF
     echo "Verificando conexión con el local..."
     if ping -q -c1 "$ipLocal" > /dev/null; then
         echo "Obteniendo últimas 5 líneas de ControlImage.txt del local con ID $localid"
-        
-        # Definir rutas de archivos
-        local_control_image="/app/soporte/usuarios/jpgutierrez/A_2024/04/Version_2/ControlImage.txt"
-        remote_temp_file="ControlImage_temp_$localid.txt"
-        comparison_file="Comparacion_ControlImage_$localid.txt"
-        
-        # Obtener las últimas 5 líneas del archivo remoto
-        if setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@"$ipLocal" "tail -n 5 /home/geocom/ControlImage.txt" > "$remote_temp_file"; then
-            echo "Últimas 5 líneas de ControlImage.txt del local con ID $localid guardadas en $remote_temp_file"
-            
-            # Comparar con el archivo local
+        if setsid ssh -oStrictHostKeyChecking=no -oLogLevel=error -oUserKnownHostsFile=/dev/null root@"$ipLocal" "tail -n 5 /home/geocom/ControlImage.txt" > "ControlImage_temp_$localid.txt"; then
+            echo "Últimas 5 líneas de ControlImage.txt del local con ID $localid guardadas en ControlImage_temp_$localid.txt"
             echo "Comparando con ControlImage.txt local:"
-            if [ -f "$local_control_image" ]; then
-                {
-                    echo "Contenido de $remote_temp_file:"
-                    cat "$remote_temp_file"
-                    echo -e "\n---\n"
-                    echo "Contenido de ControlImage.txt local:"
-                    cat "$local_control_image"
-                    echo -e "\n---\n"
-                    echo "Diferencias:"
-                    diff "$remote_temp_file" "$local_control_image" || true
-                } > "$comparison_file"
-                
-                echo "Comparación guardada en $comparison_file"
-                
-                # Mostrar un resumen de las diferencias
-                echo "Resumen de diferencias:"
-                diff --brief "$remote_temp_file" "$local_control_image" || true
+            if [ -f "/app/soporte/usuarios/jpgutierrez/A_2024/04/Version_2/ControlImage.txt" ]; then
+                echo "Contenido de ControlImage_temp_$localid.txt:" > "Comparacion_ControlImage_$localid.txt"
+                cat "ControlImage_temp_$localid.txt" >> "Comparacion_ControlImage_$localid.txt"
+                echo -e "\n---\n" >> "Comparacion_ControlImage_$localid.txt"
+                echo "Contenido de ControlImage.txt local:" >> "Comparacion_ControlImage_$localid.txt"
+                cat "/app/soporte/usuarios/jpgutierrez/A_2024/04/Version_2/ControlImage.txt" >> "Comparacion_ControlImage_$localid.txt"
+                echo -e "\n---\n" >> "Comparacion_ControlImage_$localid.txt"
+                echo "Diferencias:" >> "Comparacion_ControlImage_$localid.txt"
+                diff "ControlImage_temp_$localid.txt" "/app/soporte/usuarios/jpgutierrez/A_2024/04/Version_2/ControlImage.txt" >> "Comparacion_ControlImage_$localid.txt"
+                echo "Comparación guardada en Comparacion_ControlImage_$localid.txt"
             else
-                echo "Error: El archivo ControlImage.txt no existe en la ruta especificada: $local_control_image"
+                echo "El archivo ControlImage.txt no existe en la ruta especificada."
             fi
         else
-            echo "Error: No se pudo obtener las últimas 5 líneas de ControlImage.txt del local remoto."
+            echo "Error al obtener las últimas 5 líneas de ControlImage.txt del local remoto."
         fi
     else
-        echo "Error: Local Fuera de Línea. No se pudo establecer conexión con $ipLocal"
+    
+        echo "Local Fuera de Línea"
     fi
 fi #Aquí termina el script principal
